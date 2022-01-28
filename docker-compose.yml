@@ -7,5 +7,52 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 8080:8080
+    volumes:
+      - ./config/traefik.yaml:/etc/traefik/traefik.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
     network_mode: bridge
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.traefik.entrypoints: http
+      traefik.http.routers.traefik.service: api@internal
+      traefik.http.routers.traefik.rule: HostRegexp(`traefik.docker.localhost`)
+  error-nginx:
+    container_name: error-nginx
+    image: nginx:1.21.6
+    volumes:
+      - ./pages/error.html:/usr/share/nginx/html/index.html
+      - /etc/localtime:/etc/localtime:ro
+    network_mode: bridge
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.error-nginx.loadbalancer.server.port: 80
+      traefik.http.routers.error-nginx.entrypoints: http
+      traefik.http.routers.error-nginx.rule: HostRegexp(`page1.docker.localhost`)
+      traefik.http.routers.error-nginx.priority: 90
+  nginx:
+    container_name: nginx
+    image: nginx:1.21.6
+    volumes:
+      - ./pages/index.html:/usr/share/nginx/html/index.html
+      - /etc/localtime:/etc/localtime:ro
+    network_mode: bridge
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.nginx.loadbalancer.server.port: 80
+      traefik.http.routers.nginx.entrypoints: http
+      traefik.http.routers.nginx.rule: HostRegexp(`page1.docker.localhost`)
+      traefik.http.routers.nginx.priority: 100
+  maintenance-nginx:
+    container_name: maintenance-nginx
+    image: nginx:1.21.6
+    volumes:
+      - ./pages/maintenance.html:/usr/share/nginx/html/index.html
+      - /etc/localtime:/etc/localtime:ro
+    network_mode: bridge
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.maintenance-nginx.loadbalancer.server.port: 80
+      traefik.http.routers.maintenance-nginx.entrypoints: http
+      traefik.http.routers.maintenance-nginx.rule: HostRegexp(`page1.docker.localhost`)
+      traefik.http.routers.maintenance-nginx.priority: 110
